@@ -57,5 +57,7 @@ func main() {
 
 	response := Response{}
 	xml.Unmarshal(data, &response)
-	fmt.Println(response)
+	for _, v := range response.AddUpdateList.MetaData {
+		fmt.Println(v.ASIN)
+	}
 }
