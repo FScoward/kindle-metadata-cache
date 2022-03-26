@@ -1,11 +1,33 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 )
+
+type Response struct {
+	XMLName        xml.Name       `xml:"response"`
+	SyncTime       string         `xml:"sync_time"`
+	CacheMeataData CacheMeataData `xml:"cache_metadata"`
+	AddUpdateList  AddUpdateList  `xml:"add_update_list"`
+}
+type CacheMeataData struct {
+	Version string `xml:"version"`
+}
+type AddUpdateList struct {
+	MetaData []MetaData `xml:"meta_data"`
+}
+type MetaData struct {
+	ASIN  string `xml:"ASIN"`
+	Title Title  `xml:"title"`
+}
+type Title struct {
+	Pronunciation string `xml:"pronunciation,attr"`
+	Title         string `xml:",chardata"`
+}
 
 func main() {
 	cwd, err := os.Getwd()
@@ -31,5 +53,9 @@ func main() {
 		fmt.Printf("error: %v", err)
 		return
 	}
-	fmt.Println(string(data))
+	// fmt.Println(string(data))
+
+	response := Response{}
+	xml.Unmarshal(data, &response)
+	fmt.Println(response)
 }
