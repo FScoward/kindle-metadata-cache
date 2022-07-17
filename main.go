@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -21,12 +22,22 @@ type AddUpdateList struct {
 	MetaData []MetaData `xml:"meta_data"`
 }
 type MetaData struct {
-	ASIN  string `xml:"ASIN"`
-	Title Title  `xml:"title"`
+	ASIN    string    `xml:"ASIN"`
+	Title   Title     `xml:"title"`
+	Authors []Authors `xml:"authors"`
 }
+
 type Title struct {
 	Pronunciation string `xml:"pronunciation,attr"`
 	Title         string `xml:",chardata"`
+}
+
+type Authors struct {
+	Author Author `xml:"author"`
+}
+type Author struct {
+	Pronunciation string `xml:"pronunciation,attr"`
+	Author        string `xml:",chardata"`
 }
 
 func main() {
@@ -35,7 +46,7 @@ func main() {
 		fmt.Printf("error: %v", err)
 		return
 	}
-	homeDir, err := os.UserHomeDir()
+	homeDir, _ := os.UserHomeDir()
 	fileDir := homeDir + "/Library/Containers/com.amazon.Kindle/Data/Library/Application Support/Kindle/Cache/KindleSyncMetadataCache.xml"
 	rpath, err := filepath.Rel(cwd, fileDir)
 	if err != nil {
@@ -53,11 +64,28 @@ func main() {
 		fmt.Printf("error: %v", err)
 		return
 	}
-	// fmt.Println(string(data))
 
 	response := Response{}
 	xml.Unmarshal(data, &response)
-	for _, v := range response.AddUpdateList.MetaData {
-		fmt.Println(v.ASIN)
+	// for _, metadata := range response.AddUpdateList.MetaData {
+	// 	fmt.Println(metadata)
+	// }
+
+	// --- csvへ変換
+	rowCount := len(response.AddUpdateList.MetaData)
+	csvRecords := make([][]string, rowCount)
+	for i, metadata := range response.AddUpdateList.MetaData {
+		csvRecords[i] = make([]string, 3)
+		csvRecords[i][0] = metadata.ASIN
+		csvRecords[i][1] = metadata.Title.Title
 	}
+
+	// --- 書き込み
+	f, err := os.Create("test.csv")
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		return
+	}
+	w := csv.NewWriter(f)
+	w.WriteAll(csvRecords)
 }
